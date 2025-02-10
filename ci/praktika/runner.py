@@ -6,6 +6,8 @@ import sys
 import traceback
 from pathlib import Path
 
+from praktika.info import Info
+
 from ._environment import _Environment
 from .artifact import Artifact
 from .cidb import CIDB
@@ -415,6 +417,15 @@ class Runner:
         if workflow.enable_report:
             print(f"Run html report hook")
             HtmlRunnerHooks.post_run(workflow, job, info_errors)
+
+        if workflow.enable_commit_status_on_failure and not result.is_ok():
+            if not GH.post_commit_status(
+                name=job.name,
+                status=result.status,
+                description=result.info[0:70],
+                url=Info().get_job_report_url(),
+            ):
+                print(f"ERROR: Failed to post failed commit status for the job")
 
         return True
 
